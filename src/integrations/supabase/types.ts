@@ -14,16 +14,208 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      exams: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number
+          eligibility: string | null
+          exam_code: string
+          exam_date: string
+          fee: number
+          id: string
+          max_students: number | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number
+          eligibility?: string | null
+          exam_code: string
+          exam_date: string
+          fee?: number
+          id?: string
+          max_students?: number | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number
+          eligibility?: string | null
+          exam_code?: string
+          exam_date?: string
+          fee?: number
+          id?: string
+          max_students?: number | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_method: string
+          registration_id: string
+          status: string
+          student_id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          payment_method?: string
+          registration_id: string
+          status?: string
+          student_id: string
+          transaction_id?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_method?: string
+          registration_id?: string
+          status?: string
+          student_id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          course: string | null
+          created_at: string
+          email: string
+          enrollment_number: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          semester: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          course?: string | null
+          created_at?: string
+          email?: string
+          enrollment_number?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          semester?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          course?: string | null
+          created_at?: string
+          email?: string
+          enrollment_number?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          semester?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          created_at: string
+          exam_id: string
+          id: string
+          notes: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +342,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "student"],
+    },
   },
 } as const
