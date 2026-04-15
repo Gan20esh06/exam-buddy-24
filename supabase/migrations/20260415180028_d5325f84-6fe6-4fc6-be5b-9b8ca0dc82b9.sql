@@ -1,0 +1,1 @@
+DELETE FROM public.user_roles WHERE user_id = '1b4c3a99-2fac-476a-99ab-e128c216c368' AND role = 'student';
