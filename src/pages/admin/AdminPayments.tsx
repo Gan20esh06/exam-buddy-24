@@ -6,14 +6,34 @@ import { format } from 'date-fns';
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from('payments')
-      .select('*, registrations(*, exams(subject)), profiles:student_id(full_name, email)')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { setPayments(data || []); setLoading(false); });
+    const fetchData = async () => {
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('*, registrations(*, exams(subject))')
+        .order('created_at', { ascending: false });
+
+      const items = paymentsData || [];
+      setPayments(items);
+
+      const studentIds = [...new Set(items.map(p => p.student_id))];
+      if (studentIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', studentIds);
+
+        const map = new Map<string, any>();
+        (profilesData || []).forEach(p => map.set(p.user_id, p));
+        setProfiles(map);
+      }
+
+      setLoading(false);
+    };
+    fetchData();
   }, []);
 
   const statusBadge = (s: string) => {
@@ -48,10 +68,14 @@ export default function AdminPayments() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map(p => (
+              {payments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No payments found.</TableCell>
+                </TableRow>
+              ) : payments.map(p => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs">{p.transaction_id}</TableCell>
-                  <TableCell>{(p.profiles as any)?.full_name || '-'}</TableCell>
+                  <TableCell>{profiles.get(p.student_id)?.full_name || '-'}</TableCell>
                   <TableCell>{p.registrations?.exams?.subject || '-'}</TableCell>
                   <TableCell>₹{p.amount}</TableCell>
                   <TableCell className="capitalize">{p.payment_method}</TableCell>
