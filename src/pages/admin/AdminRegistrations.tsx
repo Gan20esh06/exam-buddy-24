@@ -12,11 +12,39 @@ export default function AdminRegistrations() {
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    const { data } = await supabase
+    setLoading(true);
+    const { data: regs, error } = await supabase
       .from('registrations')
-      .select('*, exams(*), profiles:student_id(full_name, email, course)')
+      .select('*, exams(*)')
       .order('created_at', { ascending: false });
-    setRegistrations(data || []);
+
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!regs || regs.length === 0) {
+      setRegistrations([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch profiles separately using student_ids
+    const studentIds = [...new Set(regs.map(r => r.student_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, email, course')
+      .in('user_id', studentIds);
+
+    const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+    const enriched = regs.map(r => ({
+      ...r,
+      profile: profileMap.get(r.student_id) || null,
+    }));
+
+    setRegistrations(enriched);
     setLoading(false);
   };
 
@@ -30,9 +58,9 @@ export default function AdminRegistrations() {
   };
 
   const statusBadge = (s: string) => {
-    if (s === 'approved') return 'badge-success';
-    if (s === 'rejected') return 'badge-destructive';
-    return 'badge-warning';
+    if (s === 'approved') return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800';
+    if (s === 'rejected') return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800';
+    return 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800';
   };
 
   return (
@@ -46,6 +74,8 @@ export default function AdminRegistrations() {
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
+      ) : registrations.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No registrations found.</div>
       ) : (
         <div className="form-section overflow-x-auto">
           <Table>
@@ -62,8 +92,8 @@ export default function AdminRegistrations() {
             <TableBody>
               {registrations.map(r => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{(r.profiles as any)?.full_name || '-'}</TableCell>
-                  <TableCell>{(r.profiles as any)?.email || '-'}</TableCell>
+                  <TableCell className="font-medium">{r.profile?.full_name || '-'}</TableCell>
+                  <TableCell>{r.profile?.email || '-'}</TableCell>
                   <TableCell>{r.exams?.subject} ({r.exams?.exam_code})</TableCell>
                   <TableCell>{format(new Date(r.created_at), 'PPP')}</TableCell>
                   <TableCell><span className={statusBadge(r.status)}>{r.status}</span></TableCell>
